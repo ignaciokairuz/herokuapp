@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import io
 import base64
 import os
-os.environ['FLASK_ENV'] = 'development'
+os.environ['FLASK_ENV'] = 'production'
 
 
 app = Flask(__name__)
