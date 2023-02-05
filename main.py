@@ -2,6 +2,9 @@ from flask import Flask, Response
 import matplotlib.pyplot as plt
 import io
 import base64
+import os
+os.environ['FLASK_ENV'] = 'development'
+
 
 app = Flask(__name__)
 
@@ -74,4 +77,5 @@ def index():
     return Response(image_data, content_type='image/png')
 
 if __name__ == '__main__':
-    app.run(port=8080, debug=True)
+    app.run(host='0.0.0.0', port=8080, debug=True)
+
