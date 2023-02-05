@@ -76,7 +76,7 @@ def index():
 
     return Response(image_data, content_type='image/png')
 
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=8080, debug=True)
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", debug=True, port=os.getenv("PORT") or 5000)
 
 
