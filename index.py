@@ -19,7 +19,7 @@ def index():
         y = (u*x1[num]/op1)-1
         print(x1[num])
         if y < 0:
-            y = None
+            y = 0
         y1[num] = y
     print(y1)
     # plotting the line 1 points
