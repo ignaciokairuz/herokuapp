@@ -17,13 +17,11 @@ import scraper
 
 app = Flask(__name__)
 
-# Initialize DB and Background Scheduler
-scraper.init_db()
+# Initialize Background Scheduler
 scheduler = BackgroundScheduler()
 # Run scraper every 5 minutes
 scheduler.add_job(func=scraper.scrape_coto, trigger="interval", minutes=5)
-# Also run it right now on startup
-scheduler.add_job(func=scraper.scrape_coto)
+# Start the scheduler
 scheduler.start()
 
 def process_data(x, y, op, allow_none=False):
@@ -148,7 +146,9 @@ def index():
     # PART 2: Interactive Plotly Chart from DB
     # ---------------------------------------------------------
     try:
-        conn = sqlite3.connect("coto_prices.db")
+        # Initialize DB in case it doesn't exist yet before query
+        scraper.init_db()
+        conn = sqlite3.connect(scraper.DB_NAME)
         df = pd.read_sql_query("SELECT * FROM prices", conn)
         conn.close()
 

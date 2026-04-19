@@ -1,8 +1,10 @@
 import requests
 import sqlite3
 from datetime import datetime
+import os
 
-DB_NAME = "coto_prices.db"
+# Use /tmp/ directory for serverless environments like Vercel where the filesystem is read-only
+DB_NAME = "/tmp/coto_prices.db"
 
 def init_db():
     conn = sqlite3.connect(DB_NAME)
@@ -21,6 +23,8 @@ def init_db():
     conn.close()
 
 def scrape_coto():
+    # Ensure database is initialized before scraping
+    init_db()
     print(f"Scraping Coto at {datetime.now()}")
     headers = {
         'Accept': 'application/json',
