@@ -2,3 +2,7 @@ flask
 matplotlib
 numpy
 scipy
+requests
+apscheduler
+pandas
+plotly

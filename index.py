@@ -5,9 +5,26 @@ from scipy.interpolate import make_interp_spline
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
-from flask import Flask, Response
+from flask import Flask, Response, render_template_string
+from apscheduler.schedulers.background import BackgroundScheduler
+import sqlite3
+import pandas as pd
+import plotly.express as px
+import plotly.io as pio
+
+# Import our scraper
+import scraper
 
 app = Flask(__name__)
+
+# Initialize DB and Background Scheduler
+scraper.init_db()
+scheduler = BackgroundScheduler()
+# Run scraper every 5 minutes
+scheduler.add_job(func=scraper.scrape_coto, trigger="interval", minutes=5)
+# Also run it right now on startup
+scheduler.add_job(func=scraper.scrape_coto)
+scheduler.start()
 
 def process_data(x, y, op, allow_none=False):
     x = np.array(x, dtype=float)
@@ -123,7 +140,95 @@ def index():
     # Close figure safely to free memory
     plt.close(fig)
 
-    return Response(image_data, content_type='image/png')
+    import base64
+    b64_image = base64.b64encode(image_data).decode('utf-8')
+    static_img_html = f'<img src="data:image/png;base64,{b64_image}" alt="Static Chart" style="max-width:100%; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.5);">'
+
+    # ---------------------------------------------------------
+    # PART 2: Interactive Plotly Chart from DB
+    # ---------------------------------------------------------
+    try:
+        conn = sqlite3.connect("coto_prices.db")
+        df = pd.read_sql_query("SELECT * FROM prices", conn)
+        conn.close()
+
+        if df.empty:
+            plotly_html = "<i>No pricing data yet... Please wait a moment.</i>"
+        else:
+            # Create interactive plotly chart
+            fig_plotly = px.line(
+                df, x="timestamp", y="discount_price", color="product_name",
+                markers=True,
+                title="Live Coto Digital Headphone Prices (Updated every 5 mins)",
+                labels={"timestamp": "Time", "discount_price": "Price (ARS)", "product_name": "Product"},
+                template="plotly_dark"
+            )
+            # Add some styling
+            fig_plotly.update_layout(
+                plot_bgcolor='rgba(0,0,0,0)',
+                paper_bgcolor='rgba(0,0,0,0)',
+                hovermode="x unified",
+                legend=dict(orientation="h", yanchor="bottom", y=-0.5, xanchor="center", x=0.5)
+            )
+            plotly_html = pio.to_html(fig_plotly, full_html=False, include_plotlyjs='cdn')
+    except Exception as e:
+        plotly_html = f"Error loading chart: {e}"
+
+    # Return combined HTML page
+    html_template = f"""
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Data Dashboard</title>
+        <style>
+            body {{
+                background-color: #0d1117;
+                color: #c9d1d9;
+                font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+                margin: 0; padding: 2rem;
+                display: flex; flex-direction: column; align-items: center;
+            }}
+            h1 {{
+                color: #58a6ff;
+            }}
+            .container {{
+                max-width: 1200px; width: 100%;
+                background: #161b22;
+                border: 1px solid #30363d;
+                border-radius: 12px;
+                padding: 2rem;
+                margin-bottom: 2rem;
+            }}
+            .chart-box {{
+                width: 100%;
+                overflow-x: auto;
+            }}
+        </style>
+    </head>
+    <body>
+        <h1>Multi-Data Dashboard</h1>
+
+        <div class="container">
+            <h2>Live Coto Digital Prices (Interactive)</h2>
+            <p>Tracking headphone prices automatically every 5 minutes.</p>
+            <div class="chart-box">
+                {plotly_html}
+            </div>
+        </div>
+
+        <div class="container">
+            <h2>Legacy System: Theoretical Math Output (Static Image)</h2>
+            <div style="text-align: center;">
+                {static_img_html}
+            </div>
+        </div>
+    </body>
+    </html>
+    """
+
+    return render_template_string(html_template)
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", debug=True, port=int(os.getenv("PORT", 5000)))
