@@ -1,18 +1,24 @@
 import requests
-import sqlite3
+import psycopg2
+from psycopg2.extras import RealDictCursor
 from datetime import datetime
 import os
 
-# Use /tmp/ directory for serverless environments like Vercel where the filesystem is read-only
-DB_NAME = "/tmp/coto_prices.db"
+def get_db_connection():
+    db_url = os.getenv("DATABASE_URL")
+    if not db_url:
+        print("WARNING: DATABASE_URL not set. Please configure Supabase DB URL.")
+        return None
+    return psycopg2.connect(db_url, cursor_factory=RealDictCursor)
 
 def init_db():
-    conn = sqlite3.connect(DB_NAME)
+    conn = get_db_connection()
+    if not conn: return
     cursor = conn.cursor()
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS prices (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            timestamp DATETIME,
+            id SERIAL PRIMARY KEY,
+            timestamp TIMESTAMP,
             product_name TEXT,
             sku TEXT,
             list_price REAL,
@@ -50,9 +56,10 @@ def scrape_coto():
             data = response.json()
             items = data.get('response', {}).get('results', [])
 
-            conn = sqlite3.connect(DB_NAME)
+            conn = get_db_connection()
+            if not conn: return
             cursor = conn.cursor()
-            now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            now = datetime.now()
 
             # Scrape up to 5 items to keep the chart clean
             for item in items[:5]:
@@ -74,12 +81,12 @@ def scrape_coto():
 
                 if name and list_price is not None:
                     cursor.execute(
-                        "INSERT INTO prices (timestamp, product_name, sku, list_price, discount_price) VALUES (?, ?, ?, ?, ?)",
+                        "INSERT INTO prices (timestamp, product_name, sku, list_price, discount_price) VALUES (%s, %s, %s, %s, %s)",
                         (now, name, sku, list_price, discount_price)
                     )
             conn.commit()
             conn.close()
-            print("Successfully scraped and saved.")
+            print("Successfully scraped and saved to Supabase.")
         else:
             print(f"Failed to fetch data: {response.status_code}")
     except Exception as e:

@@ -6,8 +6,6 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from flask import Flask, Response, render_template_string
-from apscheduler.schedulers.background import BackgroundScheduler
-import sqlite3
 import pandas as pd
 import plotly.express as px
 import plotly.io as pio
@@ -16,13 +14,6 @@ import plotly.io as pio
 import scraper
 
 app = Flask(__name__)
-
-# Initialize Background Scheduler
-scheduler = BackgroundScheduler()
-# Run scraper every 5 minutes
-scheduler.add_job(func=scraper.scrape_coto, trigger="interval", minutes=5)
-# Start the scheduler
-scheduler.start()
 
 def process_data(x, y, op, allow_none=False):
     x = np.array(x, dtype=float)
@@ -148,13 +139,17 @@ def index():
     try:
         # Initialize DB in case it doesn't exist yet before query
         scraper.init_db()
-        conn = sqlite3.connect(scraper.DB_NAME)
-        df = pd.read_sql_query("SELECT * FROM prices", conn)
-        conn.close()
-
-        if df.empty:
-            plotly_html = "<i>No pricing data yet... Please wait a moment.</i>"
+        conn = scraper.get_db_connection()
+        if conn is None:
+            plotly_html = "<i>No database connection. Please check DATABASE_URL.</i>"
+            df = pd.DataFrame()
         else:
+            df = pd.read_sql_query("SELECT * FROM prices", conn)
+            conn.close()
+
+        if df.empty and 'plotly_html' not in locals():
+            plotly_html = "<i>No pricing data yet... Please wait a moment.</i>"
+        elif not df.empty:
             # Create interactive plotly chart
             fig_plotly = px.line(
                 df, x="timestamp", y="discount_price", color="product_name",

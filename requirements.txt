@@ -3,6 +3,6 @@ matplotlib
 numpy
 scipy
 requests
-apscheduler
+psycopg2-binary
 pandas
 plotly
