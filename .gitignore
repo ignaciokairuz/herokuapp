@@ -1,0 +1,5 @@
+coto_prices.db
+server.log
+__pycache__/
+*.pyc
+test_coto_api.py

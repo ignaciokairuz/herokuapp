@@ -1,2 +1,8 @@
 flask
 matplotlib
+numpy
+scipy
+requests
+psycopg2-binary
+pandas
+plotly
