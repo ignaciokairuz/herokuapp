@@ -1,0 +1,28 @@
+name: Jules Experiment CI
+
+on:
+  push:
+    paths:
+      - 'jules_experiment/**'
+  pull_request:
+    paths:
+      - 'jules_experiment/**'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest requests beautifulsoup4 feedparser
+      - name: Run tests
+        run: |
+          cd jules_experiment
+          export PYTHONPATH=.
+          pytest tests/test_system.py -v

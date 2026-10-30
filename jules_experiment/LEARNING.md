@@ -1,22 +1,22 @@
 # Agent D: Learning & Strategy Adaptation
 
 ## Analysis of Cycle 1 (Baseline)
-- **Query used**: `"licitacion mantenimiento industrial OR mineria proveedores argentina"`
-- **Total Sources Found**: 8
-- **Duplicate Rate**: 0%
-- **Relevance / Signal-to-Noise Ratio**: Only 2 out of 8 (25%) were deemed actionable small-business opportunities.
+- **Queries Used**: `"licitacion mantenimiento industrial OR mineria proveedores argentina"` and `site:argentina.gob.ar "licitacion" OR "proveedores"`
+- **Total Discovered**: 89 (8 from Source 1, 81 from Source 2).
+- **Verification Rate**: ~100% of URLs were successfully visited, HTTP statuses retrieved, and full-text scraped.
 - **Observations on Noise**:
-  - The word "licitación" brought in massive national-scale projects (e.g., GNL pipelines) which are unsuitable for small B2B pilots.
-  - The term "mineria proveedores" brought in high-level macroeconomic news (e.g., Chilean suppliers boom) and regulatory news (Compre Argentino) rather than specific, localized needs.
-  - Discoveries about awarded contracts (Vicuña camp construction) are dead ends, indicating we need terms that signal *future* or *ongoing* open procurement.
+  - The word `licitacion` on government sites yields massive noise regarding financial instruments (e.g., "Llamado a licitación de instrumentos del Tesoro"), which are irrelevant to B2B services.
+  - Many networking events returned (like "Ronda de negocios RIGI") are historical dates (e.g., October 2026 dates that have already passed).
+  - General news about awarded contracts ("empresa china junto a santafesina construirán") is useless because the procurement is closed.
 
 ## Strategy for Cycle 2 (Improved)
-- **Objective**: Increase the signal-to-noise ratio by finding highly specific, actionable procurement signals for a small business.
+- **Objective**: Filter out financial tenders, eliminate historical closed events, and focus on *active, accessible* registries and forward-looking networking in specific economic hubs.
 - **Revised Query Strategy**:
-  - Drop the word `licitacion` as it skews toward mega-projects.
-  - Drop `mineria proveedores` as it returns macro industry news.
-  - Introduce terms that signal active, localized business needs: `"ronda de negocios" OR "busqueda de proveedores" OR "registro de proveedores" Vaca Muerta OR Litio Salta OR Neuquen`.
-  - Focus on specific booming localized hubs rather than country-wide terms ("Argentina").
+  - Drop the word `licitacion` entirely.
+  - Drop the word `argentina` to avoid macro-news.
+  - Use exact match terms for active entry points: `"registro de proveedores"` OR `"convocatoria proveedores"`.
+  - Target specific high-activity locales: `Vaca Muerta OR Salta OR Neuquen`.
+  - On the official government source, use: `site:argentina.gob.ar "registro de proveedores" (mineria OR energia)`.
 
 ## Expected Outcome
-- We expect fewer total results but a higher percentage of actionable opportunities (e.g., vendor registration portals, business roundtables, smaller sub-contracting needs).
+- We expect a lower total volume of documents but a drastically higher ratio of *active, non-historical* business opportunities (such as open vendor registries that a small business can join today).
